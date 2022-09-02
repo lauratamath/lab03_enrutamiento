@@ -1,0 +1,2 @@
+{"type":"names", "config":{'A': 'userrand123@alumchat.fun', 'B': 'sofiar1834@alumchat.fun', 'C': 'zeus123@alumchat.fun', 'D': 'rue19099@alumchat.fun', 'E': 'esp19258@alumchat.fun', 'F': 'tam19365@alumchat.fun'} }
+
