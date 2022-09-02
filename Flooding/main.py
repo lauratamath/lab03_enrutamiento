@@ -9,6 +9,18 @@ if sys.platform == 'win32' and sys.version_info >= (3, 8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 if __name__ == '__main__':
+    print(Fore.MAGENTA + """
+
+        +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        -                                                      -
+        +               DISTANCE VECTOR ROUTING                +
+        -                                                      - 
+        +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+            1. Continuar
+            2. Salir
+
+        """ + Style.RESET_ALL)
     print("\n            Bienvenido al servidor")
     print(Fore.BLUE + Style.DIM + "Recordatorio: usuario + @alumchat.fun"+ Style.RESET_ALL) 
     jid = input(Fore.GREEN + "Usuario >>> "+ Style.RESET_ALL)
@@ -19,8 +31,8 @@ if __name__ == '__main__':
     if routing != "flooding":
         listening = True
         
-    users = input(Fore.GREEN + "URL relativa del file de names >>> "+ Style.RESET_ALL)
-    topo = input(Fore.GREEN + "URL relativa del file de topología: "+ Style.RESET_ALL)
+    names_file = input(Fore.GREEN + "URL relativa del file de names >>> "+ Style.RESET_ALL)
+    topology_fil = input(Fore.GREEN + "URL relativa del file de topología: "+ Style.RESET_ALL)
 
     try:
         recipient = ''
@@ -30,7 +42,7 @@ if __name__ == '__main__':
             recipient = input(Fore.GREEN + "Destinatario >>> "+ Style.RESET_ALL) 
             message = input(Fore.GREEN + "Mensaje >>> "+ Style.RESET_ALL)
 
-        xmpp = Client(jid, password, recipient, message, routing, listening, users, topo)
+        xmpp = Client(jid, password, recipient, message, routing, listening, names_file, topology_fil)
         xmpp.register_plugin('xep_0030') # Service Discovery
         xmpp.register_plugin('xep_0199') # XMPP Ping
         xmpp.register_plugin('xep_0045') # Mulit-User Chat (MUC)

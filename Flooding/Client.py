@@ -8,17 +8,17 @@ from slixmpp.exceptions import IqError, IqTimeout
 
 class Client(slixmpp.ClientXMPP):
     # Clase para enlazar a los usuarios y así comunicarse entre ellos 
-    def __init__(self, jid, password, giften, message, routing, listening, users, topo):
+    def __init__(self, jid, password, recipient, message, routing, listening, names_file, topology_fil):
         slixmpp.ClientXMPP.__init__(self, jid, password)
 
-        self.giften = giften
+        self.recipient = recipient
         self.listening = listening
         self.msg = message
         self.routing = routing
         self.jid_ = jid
         self.lastid = []
-        self.users = users
-        self.topo = topo
+        self.names_file = names_file
+        self.topology_fil = topology_fil
 
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("message", self.message)
@@ -32,7 +32,7 @@ class Client(slixmpp.ClientXMPP):
         if(not self.listening and self.routing=="flooding"):
             msg = {}
             msg["Start"] = self.jid_
-            msg["Destiny"] = self.giften
+            msg["Destiny"] = self.recipient
             msg["Jumps"] = 0
             msg["Distance"] = 0
             msg["List_of_Nodes"] = []
@@ -40,7 +40,7 @@ class Client(slixmpp.ClientXMPP):
             msg["ID"] = str(uuid.uuid4())
             self.lastid.append(msg["ID"])
 
-            receivers, message = calculate(json.dumps(msg), self.jid_, self.users, self.topo)
+            receivers, message = calculate(json.dumps(msg), self.jid_, self.names_file, self.topology_fil)
 
             for destiny in receivers:
                 print("Mensaje para :",destiny)
@@ -69,27 +69,27 @@ class Client(slixmpp.ClientXMPP):
     def message(self, msg):
         if(self.routing=="flooding"):
             if msg['type'] in ('chat'):
-                giften = str(msg['from']).split('/')[0]
+                recipient = str(msg['from']).split('/')[0]
                 body = msg['body']
                 msg = eval(str(body))
                 if(msg["ID"] not in self.lastid):
                     self.lastid.append(msg["ID"])
 
-                    print('\n|',giften,"Dice:", msg["Message"],'\nSaltos:', msg["Jumps"],', Distancia:', msg["Distance"],'|\n')
+                    print('\n|',recipient,"Dice:", msg["Message"],'\nSaltos:', msg["Jumps"],', Distancia:', msg["Distance"],'|\n')
 
-                    receivers, message = calculate(str(body), self.jid_, self.users, self.topo)
+                    receivers, message = calculate(str(body), self.jid_, self.names_file, self.topology_fil)
 
                     for destiny in receivers:
 
-                        if(destiny!=giften):
+                        if(destiny!=recipient):
                             print("Mensaje enviado a :",destiny)
                             self.send_message(mto=destiny, mbody=message, mtype='chat')
 
 last_id = None
 
 # Recibe el ID en la topología y devuelve el JID 
-def get_JID(users,ID):
-	file = open(users, "r")
+def get_JID(names_file,ID):
+	file = open(names_file, "r")
 	file = file.read()
 	info = eval(file)
 	if(info["type"]=="names"):
@@ -100,8 +100,8 @@ def get_JID(users,ID):
 		raise Exception(Fore.RED + 'Archivo no encontrado' + Style.RESET_ALL)
 
 # Recibe el JID del alumchat y  devuelve el ID en la topología 
-def get_ID(users, JID):
-	file = open(users, "r")
+def get_ID(names_file, JID):
+	file = open(names_file, "r")
 	file = file.read()
 	info = eval(file)
 	if(info["type"]=="names"):
@@ -114,26 +114,26 @@ def get_ID(users, JID):
 
 
 # Devuelve una lista de los vecino de un nodo dado
-def get_neighbors(topo, users, JID):
-	ID = get_ID(users, JID)
-	file = open(topo, "r")
+def get_neighbors(topology_fil, names_file, JID):
+	ID = get_ID(names_file, JID)
+	file = open(topology_fil, "r")
 	file = file.read()
 	info = eval(file)
-	if(info["type"]=="topo"):
+	if(info["type"]=="topology_fil"):
 		names = info["config"]
 		neighbors_IDs = names[ID]
-		neighbors_JIDs = [get_JID(users,i) for i in neighbors_IDs]
+		neighbors_JIDs = [get_JID(names_file,i) for i in neighbors_IDs]
 		return(neighbors_JIDs)
 	else:
 		raise Exception(Fore.RED + 'Archivo no encontrado' + Style.RESET_ALL)
 	return  
 
 # Calcular la ruta y devolver nodos a enviar el mensaje
-def calculate(message, sender, users, topo):
+def calculate(message, sender, names_file, topology_fil):
 	start_time = time.time()
 	info = eval(message)
 	info["Jumps"] = info["Jumps"] + 1
-	nodes = get_neighbors(topo, users, sender)
+	nodes = get_neighbors(topology_fil, names_file, sender)
 	info["List_of_Nodes"] = [info["List_of_Nodes"], nodes]
 	info["Distance"] = info["Distance"] - start_time + time.time()
 	return (nodes, json.dumps(info))
