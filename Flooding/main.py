@@ -18,10 +18,9 @@ if __name__ == '__main__':
     listening = False
     if routing != "flooding":
         listening = True
-
-    print(Fore.BLUE + Style.DIM + "\AHHH: usuario + @alumchat.fun"+ Style.RESET_ALL)
+        
     users = input(Fore.GREEN + "URL relativa del file de names >>> "+ Style.RESET_ALL)
-    topo = input("URL relativa del file de topología: ")
+    topo = input(Fore.GREEN + "URL relativa del file de topología: "+ Style.RESET_ALL)
 
     try:
         recipient = ''
