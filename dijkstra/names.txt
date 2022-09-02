@@ -1,6 +1,6 @@
 {
     "type":"names",
-    "config":{"A":"alo@alumchat.fun", 
+    "config":{"A":"sofiar1834@alumchat.fun", 
         "B":"lauuu@alumchat.fun",
         "C":"martspain_official@alumchat.fun",
         "D":"olaaa@alumchat.fun",

@@ -12,6 +12,12 @@ import json
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+hello = 'HELLO'
+echo_send = "ECHO SEND"
+echo_response = "ECHO RESPONSE"
+message_type= "MESSAGE"
+lsp = 'LSP'
+
 def parseJsonToObject(jsonStr):
   obj = json.loads(jsonStr)
   return obj
@@ -65,7 +71,7 @@ class LSRClient(slixmpp.ClientXMPP):
     self.network = []
     self.echo_sent = None
     self.LSP = {
-      'type': 'LSP',
+      'type': lsp,
       'from': self.boundjid.bare,
       'sequence': 1,
       'neighbours':{}
@@ -87,7 +93,7 @@ class LSRClient(slixmpp.ClientXMPP):
       await self.sendSalute(neighbour)
     
     for neighbour in self.neighbours:
-      await self.sendEchoMessage(neighbour, "ECHO SEND")
+      await self.sendEchoMessage(neighbour, echo_send)
 
     self.network.append(self.LSP) 
 
@@ -118,23 +124,23 @@ class LSRClient(slixmpp.ClientXMPP):
 
   async def message(self, msg):
     body = parseJsonToObject(msg['body'])
-    if body['type'] == 'HELLO':
+    if body['type'] == hello:
       print("Mensaje de: ", msg['from'])
 
-    elif body['type'] == "ECHO SEND":
+    elif body['type'] == echo_send:
       print("Enviando mensaje de vuelta a: ", msg['from'])
-      await self.sendEchoMessage(body['from'], "ECHO RESPONSE")
+      await self.sendEchoMessage(body['from'], echo_response)
 
-    elif body['type'] == "ECHO RESPONSE":
+    elif body['type'] == echo_response:
       distance = time.time()-self.echo_sent
       print("La distancia hacia ", msg['from'], ' es de ', distance)
       self.LSP['neighbours'][body['from']] = distance
 
-    elif body['type'] == 'LSP':
+    elif body['type'] == lsp:
       new = await self.updateNetwork(body)
       await self.floodLSP(body, new)
 
-    elif body['type'] == "MESSAGE":
+    elif body['type'] == message_type:
       if body['to'] != self.boundjid.bare:
         print('Se recibio un mensaje para otro destino, reenviando... ')
         self.sendChatMessage(source=body['from'], dest = body['to'], steps=body['steps']+1, distance=body['distance'], visitedNodes=body['visited_nodes'].append(self.boundjid.bare), message=body['mesage'])
@@ -148,7 +154,7 @@ class LSRClient(slixmpp.ClientXMPP):
   async def sendSalute(self, dest, steps=1):
     emitter = self.boundjid.bare
     json = {
-      'type': 'HELLO',
+      'type': hello,
       'from':emitter,
       'to': dest,
       'steps': steps
@@ -178,7 +184,7 @@ class LSRClient(slixmpp.ClientXMPP):
   
   def sendChatMessage(self, source, dest, steps=0, distance=0, visitedNodes=[], message="Hola Humano"):
     body ={
-      'type': "MESSAGE",
+      'type': message_type,
       'from': source,
       'to': dest,
       'steps': steps,
@@ -232,6 +238,7 @@ class LSRClient(slixmpp.ClientXMPP):
       currentNode = nextNode
       distance += minDistance
 
+    print(visited)
     return visited
 
   def getNodeInCurrentNetwork(self, id):
