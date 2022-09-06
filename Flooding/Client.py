@@ -1,34 +1,39 @@
+import asyncio
 import uuid
-import json
 import slixmpp
+from colorama import Fore, Style
 import json
 import time
-from colorama import Fore, Style
-from slixmpp.exceptions import IqError, IqTimeout
 
 class Client(slixmpp.ClientXMPP):
-    # Clase para enlazar a los usuarios y así comunicarse entre ellos 
-    def __init__(self, jid, password, recipient, message, routing, listening, names_file, topology_fil):
+    def __init__(self, jid, password, recipient, message,routing, listening, names_info, topo_info):
         slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.received = set()
 
         self.recipient = recipient
         self.listening = listening
         self.msg = message
         self.routing = routing
+
         self.jid_ = jid
         self.lastid = []
-        self.names_file = names_file
-        self.topology_fil = topology_fil
+        self.names_info = names_info
+        self.topo_info = topo_info
+
+        self.connected_event = asyncio.Event()
+        self.presences_received = asyncio.Event()
 
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("message", self.message)
-        self.add_event_handler("register", self.register)
 
-    # Calcular ruta con los parametros y enviar mensaje de presencia
+        self.register_plugin('xep_0030') # Service Discovery
+        self.register_plugin('xep_0045') # Multi-User Chat
+        self.register_plugin('xep_0199') # Ping
+
     async def start(self, event):
         self.send_presence()
         await self.get_roster()
-
+    
         if(not self.listening and self.routing=="flooding"):
             msg = {}
             msg["Start"] = self.jid_
@@ -40,100 +45,60 @@ class Client(slixmpp.ClientXMPP):
             msg["ID"] = str(uuid.uuid4())
             self.lastid.append(msg["ID"])
 
-            receivers, message = calculate(json.dumps(msg), self.jid_, self.names_file, self.topology_fil)
+            
+            receivers, message = self.calculate(json.dumps(msg), self.jid_)
+            
+            if (message != 'salir') and len(message) > 0:
+                for receiver in receivers:
+                    self.send_message(mto=receiver, mbody=message, mtype='chat')
+            elif message == 'salir':
+                print(Fore.MAGENTA+"Adios!!!"+ Style.RESET_ALL)
+                self.disconnect
+            else:
+                pass
 
-            for destiny in receivers:
-                print("Mensaje para :",destiny)
-                self.send_message(mto=destiny, mbody=message, mtype='chat')
-    
-    def register(self, iq):
-        iq = self.Iq()
-        iq['type'] = 'set'
-        iq['register']['username'] = self.boundjid.user
-        iq['register']['password'] = self.password
-
-        try:
-            iq.send()
-            print("Autenticación : ", self.boundjid,"\n")
-        except IqError as e:
-            print(Fore.RED + 'Credenciales incorrectas' + Style.RESET_ALL, e,"\n")
-            self.disconnect()
-        except IqTimeout:
-            print(Fore.RED + 'Error: el servidor tomó demasiado tiempo' + Style.RESET_ALL)
-            self.disconnect()
-        except Exception as e:
-            print(e)
-            self.disconnect()
-
-    # Imprimir la ruta del mensaje y enviar a cada receptor de la lista
-    def message(self, msg):
-        if(self.routing=="flooding"):
-            if msg['type'] in ('chat'):
+    async def message(self, msg):
+        if(self.routing == "flooding"):
+            if msg['type'] in ('normal', 'chat'):
                 recipient = str(msg['from']).split('/')[0]
                 body = msg['body']
                 msg = eval(str(body))
                 if(msg["ID"] not in self.lastid):
                     self.lastid.append(msg["ID"])
 
-                    print('\n|',recipient,"Dice:", msg["Message"],'\nSaltos:', msg["Jumps"],', Distancia:', msg["Distance"],'|\n')
+                    print(Fore.MAGENTA + "Nuevo mensaje! >> " + Style.RESET_ALL, msg["Message"])
+                    # print(Fore.MAGENTA + "Nuevo mensaje! >> " + Style.RESET_ALL, msg["Message"], Fore.GREEN + '\nSaltos:'  + Style.RESET_ALL, msg["Jumps"], Fore.GREEN + ' Distancia:'  + Style.RESET_ALL, msg["Distance"],'\n')
 
-                    receivers, message = calculate(str(body), self.jid_, self.names_file, self.topology_fil)
+                    receivers, message = self.calculate(str(body), self.jid_)
 
-                    for destiny in receivers:
+                    for receiver in receivers:
 
-                        if(destiny!=recipient):
-                            print("Mensaje enviado a :",destiny)
-                            self.send_message(mto=destiny, mbody=message, mtype='chat')
+                        if(receiver!=recipient):
+                            self.send_message(mto=receiver, mbody=message, mtype='chat')
 
-last_id = None
+    def get_JID(self,ID):
+        if(self.names_info["type"]=="names"):
+            names = self.names_info["config"]
+            JID = names[ID]
+            return JID
 
-# Recibe el ID en la topología y devuelve el JID 
-def get_JID(names_file,ID):
-	file = open(names_file, "r")
-	file = file.read()
-	info = eval(file)
-	if(info["type"]=="names"):
-		names = info["config"]
-		JID = names[ID]
-		return(JID)
-	else:
-		raise Exception(Fore.RED + 'Archivo no encontrado' + Style.RESET_ALL)
+    def calculate(self, message, sender):
+        start_time = time.time()
+        info = eval(message)
+        info["Jumps"] = info["Jumps"] + 1
+        
+        if(self.names_info["type"]=="names"):
+            names = self.names_info["config"]
+            JIDS = {v: k for k, v in names.items()}
+            name = JIDS[sender]
 
-# Recibe el JID del alumchat y  devuelve el ID en la topología 
-def get_ID(names_file, JID):
-	file = open(names_file, "r")
-	file = file.read()
-	info = eval(file)
-	if(info["type"]=="names"):
-		names = info["config"]
-		JIDS = {v: k for k, v in names.items()}
-		name = JIDS[JID]
-		return(name)
-	else:
-		raise Exception(Fore.RED + 'Archivo no encontrado' + Style.RESET_ALL)
+        if(self.topo_info["type"]=="topo"):
+            names = self.topo_info["config"]
+            neighbors_IDs = names[name]
+            neighbors_JIDs = [self.get_JID(i) for i in neighbors_IDs]
+        
+        nodes = neighbors_JIDs
+        info["List_of_Nodes"] = [info["List_of_Nodes"], nodes]
+        info["Distance"] = info["Distance"] - start_time + time.time()
+        return nodes, json.dumps(info)
 
-
-# Devuelve una lista de los vecino de un nodo dado
-def get_neighbors(topology_fil, names_file, JID):
-	ID = get_ID(names_file, JID)
-	file = open(topology_fil, "r")
-	file = file.read()
-	info = eval(file)
-	if(info["type"]=="topology_fil"):
-		names = info["config"]
-		neighbors_IDs = names[ID]
-		neighbors_JIDs = [get_JID(names_file,i) for i in neighbors_IDs]
-		return(neighbors_JIDs)
-	else:
-		raise Exception(Fore.RED + 'Archivo no encontrado' + Style.RESET_ALL)
-	return  
-
-# Calcular la ruta y devolver nodos a enviar el mensaje
-def calculate(message, sender, names_file, topology_fil):
-	start_time = time.time()
-	info = eval(message)
-	info["Jumps"] = info["Jumps"] + 1
-	nodes = get_neighbors(topology_fil, names_file, sender)
-	info["List_of_Nodes"] = [info["List_of_Nodes"], nodes]
-	info["Distance"] = info["Distance"] - start_time + time.time()
-	return (nodes, json.dumps(info))

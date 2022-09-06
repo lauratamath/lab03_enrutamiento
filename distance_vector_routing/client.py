@@ -149,7 +149,7 @@ class Client(slixmpp.ClientXMPP):
         return None
 
     def nodo_vecino(self, grafo_pos, source):
-            return list(grafo_pos[source].keys())
+        return list(grafo_pos[source].keys())
 
  # Distancia entre nodos adyacentes
     def echo_msg(self):

@@ -1,55 +1,61 @@
-from getpass import getpass
-from Client import *
-import asyncio
 import sys
-from colorama import Fore, Style
-
-#Small fix that allows the program to run on windows operating systems due to an error with the asyncio library
-if sys.platform == 'win32' and sys.version_info >= (3, 8):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+from client import *
 
 if __name__ == '__main__':
-    print(Fore.MAGENTA + """
 
-        +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        -                                                      -
-        +               DISTANCE VECTOR ROUTING                +
-        -                                                      - 
-        +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-            1. Continuar
-            2. Salir
-
-        """ + Style.RESET_ALL)
-    print("\n            Bienvenido al servidor")
     print(Fore.BLUE + Style.DIM + "Recordatorio: usuario + @alumchat.fun"+ Style.RESET_ALL) 
     jid = input(Fore.GREEN + "Usuario >>> "+ Style.RESET_ALL)
-    password = getpass(Fore.GREEN +"Contraseña >>> "+ Style.RESET_ALL)
+    jid += "@alumchat.fun"
+    password = input(Fore.GREEN +"Contraseña >>> "+ Style.RESET_ALL)
     routing = "flooding"
     
     listening = False
     if routing != "flooding":
         listening = True
+
+    r_n = open("names.txt", "r").read()
+    r_t = open("topologia.txt", "r").read()
+    names_info = eval(r_n)
+    topo_info = eval(r_t)
+
+    recipient = ''
+    message = ''
+    
+    menu = True
+    
+    print(Fore.MAGENTA + """
+
+    +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -                                                      -
+    +                   FLOODING ROUTING                   +
+    -                                                      - 
+    +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+        1. Continuar
+        2. Salir
+
+    """ + Style.RESET_ALL)
+
+    op_1 = input(Fore.GREEN+"Ingresar número correspondiente a la opción deseada >>> "+ Style.RESET_ALL)
+    
+    if op_1 == '1':
+        print(Fore.BLUE + Style.DIM + "\nRecordatorio: usuario + @alumchat.fun"+ Style.RESET_ALL) 
+        recipient = input(Fore.GREEN +"¿Con quién desea chatear? >>> "+ Style.RESET_ALL) 
+        recipient += "@alumchat.fun"
+
+        print(Fore.BLUE + Style.DIM + "\n* Escriba salir para regresar al menu principal *"+ Style.RESET_ALL) 
         
-    names_file = input(Fore.GREEN + "URL relativa del file de names >>> "+ Style.RESET_ALL)
-    topology_fil = input(Fore.GREEN + "URL relativa del file de topología: "+ Style.RESET_ALL)
+        message = input(Fore.BLUE +"Escriba un mensaje >>> "+ Style.RESET_ALL)
+            
+    elif op_1 == '2':
+        print(Fore.MAGENTA+"Adios!!!"+ Style.RESET_ALL)
+        sys.exit()
 
-    try:
-        recipient = ''
-        message = ''
+    else:
+        pass
 
-        if(not listening):
-            recipient = input(Fore.GREEN + "Destinatario >>> "+ Style.RESET_ALL) 
-            message = input(Fore.GREEN + "Mensaje >>> "+ Style.RESET_ALL)
-
-        xmpp = Client(jid, password, recipient, message, routing, listening, names_file, topology_fil)
-        xmpp.register_plugin('xep_0030') # Service Discovery
-        xmpp.register_plugin('xep_0199') # XMPP Ping
-        xmpp.register_plugin('xep_0045') # Mulit-User Chat (MUC)
-        xmpp.register_plugin('xep_0096') # Jabber Search
-        xmpp.register_plugin('xep_0077') ### Band Registration
-        xmpp.connect()
-        xmpp.process(forever=False)
+    xmpp = Client(jid, password, recipient, message, routing, listening, names_info, topo_info)
+    xmpp.connect()
+    xmpp.loop.run_until_complete(xmpp.connected_event.wait())
+    xmpp.process(forever=False)
         
-    except KeyboardInterrupt as e:
-        pass 
