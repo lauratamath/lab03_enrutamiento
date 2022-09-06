@@ -1,9 +1,0 @@
-{
-    "type":"names",
-    "config":{"A":"sofiar1834@alumchat.fun", 
-        "B":"userrand123@alumchat.fun",
-        "C":"martspain_official@alumchat.fun",
-        "D":"olaaa@alumchat.fun",
-        "E":"martspain_test@alumchat.fun"
-    },
-}

@@ -31,7 +31,7 @@ async def main(xmpp: Client):
         if op_1 == '1':
             print(Fore.BLUE + Style.DIM + "\nRecordatorio: usuario + @alumchat.fun"+ Style.RESET_ALL) 
             user_name = await ainput(Fore.GREEN +"¿Con quién desea chatear? >>> "+ Style.RESET_ALL)
-
+            
             print(Fore.BLUE + Style.DIM + "\n* Escriba salir para regresar al menu principal *"+ Style.RESET_ALL) 
             activo = True
 
@@ -67,8 +67,9 @@ async def main(xmpp: Client):
                 else:
                     pass
 
-        elif op_1 == '1':
+        elif op_1 == '2':
             menu = False
+            print(Fore.MAGENTA+"Adios!!!"+ Style.RESET_ALL)
             xmpp.disconnect()
 
         else:

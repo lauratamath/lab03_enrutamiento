@@ -1,14 +1,28 @@
-from getpass import getpass
-from linkStateRouting import *
+from client import Client
+from colorama import Fore, Style
 
-# Driver and program starting point.
 if __name__ == '__main__':
-    print("## Chat de Link State Routing ##\n")
-    jid = input('Ingresar el jid: ')
-    pswd = getpass('Ingresar contraseña: ')
-    namesFileName = input('Ingresar el nombre del archivo que contiene los nombres: ')
-    topologyFileName = input('Ingresar el nombre del archivo de la topología: ')
 
-    xmpp = LSRClient(jid, pswd, topologyFileName, namesFileName)
+    r_n = open("names.txt", "r").read()
+    r_t = open("topologia.txt", "r").read()
+    names_info = eval(r_n)
+    topo_info = eval(r_t)
+
+    print(Fore.MAGENTA + """
+
+        +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        -                                                      -
+        +                       ALUMCHAT                       +
+        -                                                      - 
+        +-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+        """ + Style.RESET_ALL)
+
+    print(Fore.BLUE + Style.DIM + "Recordatorio: usuario + @alumchat.fun"+ Style.RESET_ALL) 
+    jid = input(Fore.GREEN + "Usuario >>> "+ Style.RESET_ALL)
+    contra = input(Fore.GREEN +"Contraseña >>> "+ Style.RESET_ALL)
+    # jid += "@alumchat.fun"
+
+    xmpp = Client(jid, contra, topo_info, names_info)
     xmpp.connect()
     xmpp.process(forever=False)
