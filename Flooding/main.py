@@ -7,18 +7,13 @@ if __name__ == '__main__':
     jid = input(Fore.GREEN + "Usuario >>> "+ Style.RESET_ALL)
     jid += "@alumchat.fun"
     password = input(Fore.GREEN +"Contraseña >>> "+ Style.RESET_ALL)
-    routing = "flooding"
-    
-    listening = False
-    if routing != "flooding":
-        listening = True
 
     r_n = open("names.txt", "r").read()
     r_t = open("topologia.txt", "r").read()
     names_info = eval(r_n)
     topo_info = eval(r_t)
 
-    recipient = ''
+    user_name = ''
     message = ''
     
     menu = True
@@ -40,8 +35,8 @@ if __name__ == '__main__':
     
     if op_1 == '1':
         print(Fore.BLUE + Style.DIM + "\nRecordatorio: usuario + @alumchat.fun"+ Style.RESET_ALL) 
-        recipient = input(Fore.GREEN +"¿Con quién desea chatear? >>> "+ Style.RESET_ALL) 
-        recipient += "@alumchat.fun"
+        user_name = input(Fore.GREEN +"¿Con quién desea chatear? >>> "+ Style.RESET_ALL) 
+        user_name += "@alumchat.fun"
 
         print(Fore.BLUE + Style.DIM + "\n* Escriba salir para regresar al menu principal *"+ Style.RESET_ALL) 
         
@@ -54,7 +49,7 @@ if __name__ == '__main__':
     else:
         pass
 
-    xmpp = Client(jid, password, recipient, message, routing, listening, names_info, topo_info)
+    xmpp = Client(jid, password, user_name, message, names_info, topo_info)
     xmpp.connect()
     xmpp.loop.run_until_complete(xmpp.connected_event.wait())
     xmpp.process(forever=False)
