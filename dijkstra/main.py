@@ -3,8 +3,8 @@ from colorama import Fore, Style
 
 if __name__ == '__main__':
 
-    r_n = open("./dijkstra/names.txt", "r").read()
-    r_t = open("./dijkstra/topologia.txt", "r").read()
+    r_n = open("names.txt", "r").read()
+    r_t = open("topologia.txt", "r").read()
     names_info = eval(r_n)
     topo_info = eval(r_t)
 

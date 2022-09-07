@@ -178,28 +178,29 @@ class Client(slixmpp.ClientXMPP):
     
     def calcShortestPath(self, origin, dest):
         visitedNodes = []
-        actualNode = self.findCurrentNode(origin)
+        new_node = self.findCurrentNode(origin)
         distance = 0
-        while actualNode['from'] != dest:
+
+        while new_node['from'] != dest:
             nodeDistances = [] 
-            neighbours = actualNode['neighbours']
+            neighbours = new_node['neighbours']
             for vert in neighbours.keys():
                 if vert == dest:
-                    visitedNodes.append(actualNode)
-                    actualNode = self.findCurrentNode(vert)
-                    visitedNodes.append(actualNode)
+                    visitedNodes.append(new_node)
+                    new_node = self.findCurrentNode(vert)
+                    visitedNodes.append(new_node)
                     return visitedNodes
                 elif vert not in visitedNodes:
                     distance_to_neighbour = neighbours[vert]
                     nodeDistances.append(distance_to_neighbour)
-            minDist = min(nodeDistances)
-            nodeIndex = nodeDistances.index(minDist)
-            nodeList = list(actualNode['neighbours'].keys())
-            nodeToVisitID = nodeList[nodeIndex]
-            visitedNodes.append(actualNode)
-            nodeToVisit = self.findCurrentNode(nodeToVisitID)
-            actualNode = nodeToVisit
-            distance += minDist
+
+            nodeList = list(new_node['neighbours'].keys())
+            visitedNodes.append(new_node)
+
+            neigh_node = self.findCurrentNode(nodeList[nodeDistances.index(min(nodeDistances))])
+            new_node = neigh_node
+            distance += min(nodeDistances)
+            
         return visitedNodes
 
     def findCurrentNode(self, id):
